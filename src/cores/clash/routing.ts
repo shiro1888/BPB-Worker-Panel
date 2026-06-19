@@ -6,25 +6,23 @@ export function buildRoutingRules(isWarp: boolean) {
     const { blockUDP443 } = globalThis.settings;
     const geoAssets = getGeoAssets();
     const routingRules = accRoutingRules(geoAssets);
-    const rules = [`GEOIP,lan,DIRECT,no-resolve`];
+    const mainProxy = "✅ Selector";
+    const rules = [`GEOIP,lan,${mainProxy},no-resolve`];
 
-    if (!isWarp) {
-        rules.push("NETWORK,udp,REJECT");
-    } else if (blockUDP443) {
-        rules.push("AND,((NETWORK,udp),(DST-PORT,443)),REJECT");
-    }
+    if (!isWarp) rules.push(`NETWORK,udp,${mainProxy}`);
+    else if (blockUDP443) rules.push(`AND,((NETWORK,udp),(DST-PORT,443)),${mainProxy}`);
 
     return [
         ...rules,
-        ...routingRules.block.geosites.map(geosite => `RULE-SET,${geosite},REJECT`),
-        ...routingRules.block.domains.map(domain => `DOMAIN-SUFFIX,${domain},REJECT`),
-        ...routingRules.block.geoips.map(geoip => `RULE-SET,${geoip},REJECT`),
-        ...routingRules.block.ips.map(ip => buildIpCidrRule(ip, 'REJECT')),
-        ...routingRules.bypass.geosites.map(geosite => `RULE-SET,${geosite},DIRECT`),
-        ...routingRules.bypass.domains.map(domain => `DOMAIN-SUFFIX,${domain},DIRECT`),
-        ...routingRules.bypass.geoips.map(geoip => `RULE-SET,${geoip},DIRECT`),
-        ...routingRules.bypass.ips.map(ip => buildIpCidrRule(ip, 'DIRECT')),
-        "MATCH,✅ Selector"
+        ...routingRules.block.geosites.map(geosite => `RULE-SET,${geosite},${mainProxy}`),
+        ...routingRules.block.domains.map(domain => `DOMAIN-SUFFIX,${domain},${mainProxy}`),
+        ...routingRules.block.geoips.map(geoip => `RULE-SET,${geoip},${mainProxy}`),
+        ...routingRules.block.ips.map(ip => buildIpCidrRule(ip, mainProxy)),
+        ...routingRules.bypass.geosites.map(geosite => `RULE-SET,${geosite},${mainProxy}`),
+        ...routingRules.bypass.domains.map(domain => `DOMAIN-SUFFIX,${domain},${mainProxy}`),
+        ...routingRules.bypass.geoips.map(geoip => `RULE-SET,${geoip},${mainProxy}`),
+        ...routingRules.bypass.ips.map(ip => buildIpCidrRule(ip, mainProxy)),
+        `MATCH,${mainProxy}`
     ];
 }
 
