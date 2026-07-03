@@ -13,6 +13,32 @@ import {
 	handleProxyIPs
 } from '@handlers';
 
+const BLOCKED_FALLBACK_PATHS = new Set([
+	'/view_video.php',
+	'/video/search'
+]);
+
+const BLOCKED_FALLBACK_PREFIXES = [
+	'/gif/',
+	'/playlist/',
+	'/model/'
+];
+
+function isBlockedFallbackPath(pathName: string): boolean {
+	return BLOCKED_FALLBACK_PATHS.has(pathName) ||
+		BLOCKED_FALLBACK_PREFIXES.some(prefix => pathName.startsWith(prefix));
+}
+
+function blockFallbackAbuse(): Response {
+	return new Response('Forbidden', {
+		status: 403,
+		headers: {
+			'Content-Type': 'text/plain; charset=utf-8',
+			'Cache-Control': 'no-store'
+		}
+	});
+}
+
 export default {
 	async fetch(request: Request, env: Env) {
 		try {
@@ -25,6 +51,11 @@ export default {
 			} else {
 				initHttp(request, env);
 				const { pathName } = globalThis.globalConfig;
+
+				if (isBlockedFallbackPath(pathName)) {
+					return blockFallbackAbuse();
+				}
+
 				const path = pathName.split('/')[1];
 
 				switch (path) {
